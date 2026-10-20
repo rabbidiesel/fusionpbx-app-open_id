@@ -81,6 +81,8 @@ User email address must be unique when using the default mapping. The column use
 
 The "Logout" menu option in FusionPBX does not logout of OKTA or any OIDC service that requires a callback to remove the active token.
 
+When the *Remember Me* checkbox is ticked on the login form before clicking an OpenID login button, a remember me token is issued after a successful OpenID login, the same as a username and password login. This requires the Default Setting *remember_me* in the *Login* category to be enabled, and a FusionPBX version whose login form passes the checkbox to the login options. Logging out of FusionPBX removes the token.
+
 The OpenID Connect app has been tested with Google, OKTA Developer Edition, and Microsoft Entra ID successfully.
 
 ---

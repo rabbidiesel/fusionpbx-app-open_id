@@ -50,11 +50,33 @@ if (isset($_GET['action']) && $settings->get('open_id', 'enabled', false)) {
 		exit();
 	}
 
+	//remember the "Remember Me" checkbox from the login form while the user is sent to the identity provider
+	if (!isset($_GET['code'])) {
+		$_SESSION['open_id_remember_me'] = (($_GET['remember_me'] ?? '') === 'true');
+	}
+
 	//get the result array from the authenticator
 	$result = $authenticator->authenticate();
 	if (!empty($result)) {
 		//create the user session
 		authentication::create_user_session($result, $settings);
+
+		//the remember me choice only applies to this login attempt
+		$remember_me_requested = !empty($_SESSION['open_id_remember_me']);
+		unset($_SESSION['open_id_remember_me']);
+
+		if (!empty($result['authorized'])) {
+			//issue a remember me token when requested on the login form and allowed by the login settings
+			if ($remember_me_requested && $settings->get('login', 'remember_me', false) && class_exists('remember_me')) {
+				$remember_me = new remember_me(['settings' => $settings]);
+				$token_data = $remember_me->issue_token();
+				$result['remember_selector'] = $token_data['selector'];
+				$result['remember_validator'] = $token_data['hashed_validator'];
+			}
+
+			//log the successful login, this also stores the remember me token
+			user_logs::add($result);
+		}
 
 		//redirect to landing page
 		$landing_page = $settings->get('login', 'destination', '/core/dashboard');
